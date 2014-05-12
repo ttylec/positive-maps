@@ -61,7 +61,7 @@ schmidtRank v = matrixRank coeff_mat
     where
         d = (floor . sqrt . fromIntegral . dim) v
         coeff_mat = buildMatrix d d coeff
-        coeff (i, j) = eij <.> v
+        coeff (i, j) = cdot eij v
             where
                 eij = tensor (basis d (i+1)) (basis d (j+1))
 
@@ -94,34 +94,34 @@ isOrthoSubset (v:vs) = orthoToAll && isOrthoSubset vs
 randomBpTest :: Int -> Operator -> Bool
 randomBpTest trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) vlist
+        inner = map (\v -> realPart (v `cdot` (a <> v))) vlist
         d = (floor . sqrt . fromIntegral . rows) a
         vlist = map (\s -> randomTensorVector s d) [1..trials]
 
 randomBpTest3 :: Int -> Operator -> Bool
 randomBpTest3 trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) $ take trials randomVectorPool3
+        inner = map (\v -> realPart (v `cdot` (a <> v))) $ take trials randomVectorPool3
 
 randomBpTest4 :: Int -> Operator -> Bool
 randomBpTest4 trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) $ take trials randomVectorPool4
+        inner = map (\v -> realPart (v `cdot` (a <> v))) $ take trials randomVectorPool4
 
 randomBpTest5 :: Int -> Operator -> Bool
 randomBpTest5 trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) $ take trials randomVectorPool5
+        inner = map (\v -> realPart (v `cdot` (a <> v))) $ take trials randomVectorPool5
 
 randomBpTest6 :: Int -> Operator -> Bool
 randomBpTest6 trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) $ take trials randomVectorPool6
+        inner = map (\v -> realPart (v `cdot` (a <> v))) $ take trials randomVectorPool6
 
 randomBpTest7 :: Int -> Operator -> Bool
 randomBpTest7 trials a = all (>= 0) inner
     where
-        inner = map (\v -> realPart (v <.> (a <> v))) $ take trials randomVectorPool7
+        inner = map (\v -> realPart (v `cdot` (a <> v))) $ take trials randomVectorPool7
 
 randomComplexVector :: Int -> Int -> HVec
 randomComplexVector seed d = zipVectorWith (:+) realPart imaginaryPart
@@ -348,7 +348,7 @@ onlyOrthoToProj' :: [(HVec, a)] -> Operator -> [(HVec, a)]
 onlyOrthoToProj' xs q = filter (\(x, t) -> isInNullSpace q x) xs
 
 isInNullSpace :: Operator -> HVec -> Bool
-isInNullSpace q x = equalsZero $ x <.> (q <> x)
+isInNullSpace q x = equalsZero $ x `cdot` (q <> x)
 
 --
 -- Combinatorics

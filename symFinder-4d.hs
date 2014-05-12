@@ -7,10 +7,10 @@ import Data.List
 
 dim = 4
 bptester = randomBpTest4 1000
-rank = 6
+aim = 3 -- (dim-1)/2 * vrank
+rank = 3
 vrank = 2
 phases = phases3R
-aim = 3 -- (dim-1)/2 * vrank
 
 main :: IO ()
 main = do
