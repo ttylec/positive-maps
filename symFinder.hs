@@ -6,7 +6,7 @@ import Data.List
 
 
 dim = 5
-bptester = randomBpTest5 1000
+bptester = randomBpTest5 100
 aim = 4 -- (dim-1)/2 * vrank
 vrank = 2
 phases = phases2R
