@@ -10,11 +10,20 @@ bptester = randomBpTest4 1000
 aim = 3 -- (dim-1)/2 * vrank
 rank = 3
 vrank = 2
-phases = phases3R
+phases = phases2C
 
 main :: IO ()
 main = do
         let
             (x:xs) = basicSchmidtRankSet vrank dim phases
-        -- findSymmetries bptester rank xs
+            q0 = proj x
+            counts@(c0:_) = snd . head . addCounts $ [x]
+            ss = constructSymmetry aim (q0, counts) $ addCounts xs
+            bpss = filter bptester ss
+    
+        -- putStrLn . show $ counts
+        -- putStrLn . show . length $ xs
+        -- putStrLn $ show $ length $ bpss
+        -- putStrLn $ show $ length $ parss
+        -- parallelConstructSymmetryStepII 1 bptester aim (q0, counts) $ addCounts xs
         parallelConstructSymmetry bptester aim (x:xs)

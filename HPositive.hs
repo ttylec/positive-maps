@@ -1,19 +1,15 @@
 module HPositive (
-                 basis,
-                 tensorBasis,
-                 tensor,
+                 basis, tensorBasis, tensor, proj,
                  basicSchmidtRankSet,
-                 schmidtRank,
-                 randomBpTest,
-                 randomBpTest3,
-                 randomBpTest4,
-                 randomBpTest5,
-                 randomBpTest6,
-                 randomBpTest7,
+                 schmidtRank, randomBpTest,
+                 randomBpTest3, randomBpTest4, randomBpTest5, randomBpTest6, randomBpTest7,
                  symmetryWorker,
                  findSymmetries,
                  parallelConstructSymmetry,
+                 parallelConstructSymmetryStepII,
+                 constructSymmetry,
                  -- findSymmetries',
+                 addCounts,
                  phases2R,
                  phases2C,
                  phases3R
@@ -27,6 +23,12 @@ import Control.DeepSeq
 import Data.List
 import Text.Printf
 import System.IO
+
+import qualified Debug.Trace as Debug
+debug = flip Debug.trace
+
+-- old version of hmatrix
+cdot = (<.>)
 
 --
 -- Basic linear algebra stuff
@@ -182,6 +184,7 @@ parallelConstructSymmetryStepII idx bptester aim qq@(q0, counts@(c0:cs)) xs = do
             sc = map (\q -> constructSymmetry aim q nextxs) qs `using` (parList rdeepseq)
             ss = filter bptester $ concat $ sc 
             fn = printf "candidates-%d.m" (idx :: Int) 
+        hPutStrLn stderr $ printf "%d: need to check %d extensions" (idx :: Int) (length qs)
         if length ss > 0 
         then 
             do
@@ -192,29 +195,35 @@ parallelConstructSymmetryStepII idx bptester aim qq@(q0, counts@(c0:cs)) xs = do
                 hClose outf
         else
             do
-                hPutStrLn stderr "Nothing found, no file created."
-        hPutStrLn stderr $ printf "%d checking, found %d" (idx :: Int) (length ss)
+                return ()
+        hPutStrLn stderr $ printf "%d: found %d" (idx :: Int) (length ss)
 
 
 expandByProj (q0, counts) (p, cs) = (q0 + p, tail $ sumLists counts cs)
 
 constructSymmetry :: Int -> (Operator, [Int]) -> [(HVec, [Int])] -> [Operator]
-constructSymmetry _ (q, []) _ = [makeS q]
+constructSymmetry _ (q, []) _ = [makeS q] -- `debug` "all aims done: constructing symmetry"
 constructSymmetry aim (q, cs) []
-    | all (== aim) cs = [makeS q]
-    | otherwise = []
+    | all (== aim) cs = [makeS q] -- `debug` "empty vector list, but aims fulfilled: constructing symmetry" 
+    | otherwise = [] -- `debug` "empty vector list, but aims not fulfilled"
 constructSymmetry aim qq@(q0, counts@(c0:cs)) xs
-        | c0 == aim = constructSymmetry aim (q0, cs) nextxs
-        | qs == [] && all (== aim) counts = [makeS q0]
-        | qs == [] && any (/= aim) counts = []
-        | otherwise = concat $ map (\q -> constructSymmetry aim q nextxs) $ qs
+        | c0 == aim = constructSymmetry aim (q0, cs) nextxs -- `debug` ("aim fulfilled, skipping (" ++ ((show . length) cs) ++ " to go)")
+        | qs == [] && all (== aim) counts = [makeS q0] -- `debug` "cannot extend, but aims fulfilled: constructing symmetry"
+        | qs == [] && any (/= aim) counts = [] -- `debug` "cannot extend and aim is not fulfilled"
+        | otherwise =  concat $ map (\q -> constructSymmetry aim q nextxs) $ qs --`debug` formatDbgMsg
         where
-            qs = map expandByProj $ filter (isGoodMix aim qq) ps
+            qs = map (expandByProj qq) $ filter (isGoodMix aim qq) ps
             ps = map makeQ $ filter (isOrthoSubset . fst. unzip) $ subsets (aim - c0) goodxs
             oxs = xs `onlyOrthoToProj'` q0
             goodxs = filter (\(x, c) -> (head c) > 0) $ oxs
             nextxs = map (\(x, c) -> (x, tail c)) $ filter (\(x, c) -> (head c) == 0) $ oxs
-            expandByProj (p, cs) = (q0 + p, tail $ sumLists counts cs)
+            traceConstruction :: a -> a
+            traceConstruction  
+                | length counts == dim = Debug.trace (((show . length) qs) ++ " to check at level 1...")
+                | length counts == dim - 1 = Debug.trace (((show . length) qs) ++ " to check at level 2...")
+                | length counts == dim - 2 && dim > 4 = Debug.trace "recursive call at level 3..."
+                | otherwise = id
+            dim = round . sqrt . fromIntegral . rows $ q0
 
 isGoodMix aim (_, counts) (_, cs) = (maximum sums <= aim) && (head sums == aim)
     where
@@ -363,6 +372,7 @@ basicSchmidtRankSet rank dim phases = filter ((==rank) . schmidtRank) $ concat $
         addPairsWithPhase f = map (sum . (zipWith scale f)) sets
 
 subsets :: Int -> [a] -> [[a]]
+subsets 0 xs = []
 subsets 1 xs = map (\x -> [x]) xs
 subsets _ [] = []
 subsets n (x:xs) = (map (x:) $ subsets (n-1) xs) ++ (subsets n xs)
