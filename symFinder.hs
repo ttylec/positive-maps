@@ -17,7 +17,7 @@ main = do
             (x:xs) = basicSchmidtRankSet vrank dim phases
             q0 = proj x
             counts@(c0:_) = snd . head . addCounts $ [x]
-            ss = constructSymmetry aim (q0, counts) $ addCounts xs
+            ss = constructSymmetry bptester aim (q0, counts) $ addCounts xs
             bpss = filter bptester ss
     
         -- putStrLn . show $ counts

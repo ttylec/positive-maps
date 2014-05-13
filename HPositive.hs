@@ -181,7 +181,7 @@ parallelConstructSymmetryStepII idx bptester aim qq@(q0, counts@(c0:cs)) xs = do
             oxs = xs `onlyOrthoToProj'` q0
             goodxs = filter (\(x, c) -> (head c) > 0) $ oxs
             nextxs = map (\(x, c) -> (x, tail c)) $ filter (\(x, c) -> (head c) == 0) $ oxs
-            sc = map (\q -> constructSymmetry aim q nextxs) qs `using` (parList rdeepseq)
+            sc = map (\q -> constructSymmetry bptester aim q nextxs) qs `using` (parList rdeepseq)
             ss = filter bptester $ concat $ sc 
             fn = printf "candidates-%d.m" (idx :: Int) 
         hPutStrLn stderr $ printf "%d: need to check %d extensions" (idx :: Int) (length qs)
@@ -201,18 +201,18 @@ parallelConstructSymmetryStepII idx bptester aim qq@(q0, counts@(c0:cs)) xs = do
 
 expandByProj (q0, counts) (p, cs) = (q0 + p, tail $ sumLists counts cs)
 
-constructSymmetry :: Int -> (Operator, [Int]) -> [(HVec, [Int])] -> [Operator]
-constructSymmetry _ (q, []) _ = [makeS q] -- `debug` "all aims done: constructing symmetry"
-constructSymmetry aim (q, cs) []
+constructSymmetry :: (Operator -> Bool) -> Int -> (Operator, [Int]) -> [(HVec, [Int])] -> [Operator]
+constructSymmetry _ _ (q, []) _ = [makeS q] -- `debug` "all aims done: constructing symmetry"
+constructSymmetry _ aim (q, cs) []
     | all (== aim) cs = [makeS q] -- `debug` "empty vector list, but aims fulfilled: constructing symmetry" 
     | otherwise = [] -- `debug` "empty vector list, but aims not fulfilled"
-constructSymmetry aim qq@(q0, counts@(c0:cs)) xs
-        | c0 == aim = constructSymmetry aim (q0, cs) nextxs -- `debug` ("aim fulfilled, skipping (" ++ ((show . length) cs) ++ " to go)")
+constructSymmetry bptester aim qq@(q0, counts@(c0:cs)) xs
+        | c0 == aim = constructSymmetry bptester aim (q0, cs) nextxs -- `debug` ("aim fulfilled, skipping (" ++ ((show . length) cs) ++ " to go)")
         | qs == [] && all (== aim) counts = [makeS q0] -- `debug` "cannot extend, but aims fulfilled: constructing symmetry"
         | qs == [] && any (/= aim) counts = [] -- `debug` "cannot extend and aim is not fulfilled"
-        | otherwise =  concat $ map (\q -> constructSymmetry aim q nextxs) $ qs --`debug` formatDbgMsg
+        | otherwise =  concat $ map (\q -> constructSymmetry bptester aim q nextxs) $ qs --`debug` formatDbgMsg
         where
-            qs = map (expandByProj qq) $ filter (isGoodMix aim qq) ps
+            qs = filter (bptester . fst) $ map (expandByProj qq) $ filter (isGoodMix aim qq) ps
             ps = map makeQ $ filter (isOrthoSubset . fst. unzip) $ subsets (aim - c0) goodxs
             oxs = xs `onlyOrthoToProj'` q0
             goodxs = filter (\(x, c) -> (head c) > 0) $ oxs
@@ -221,7 +221,7 @@ constructSymmetry aim qq@(q0, counts@(c0:cs)) xs
             traceConstruction  
                 | length counts == dim = Debug.trace (((show . length) qs) ++ " to check at level 1...")
                 | length counts == dim - 1 = Debug.trace (((show . length) qs) ++ " to check at level 2...")
-                | length counts == dim - 2 && dim > 4 = Debug.trace "recursive call at level 3..."
+                | length counts == dim - 2 = Debug.trace "recursive call at level 3..."
                 | otherwise = id
             dim = round . sqrt . fromIntegral . rows $ q0
 
