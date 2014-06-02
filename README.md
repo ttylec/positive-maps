@@ -54,15 +54,15 @@ You will also need to use custom version of `hmatrix` Haskell library.
 This can be cloned from git repository:
 
 ```sh
-git clone https://github.com/ttylec/hmatrix.git
+$ git clone https://github.com/ttylec/hmatrix.git
 ```
 
 then from within `hmatrix` directory run
 
 ```sh
-cabal configure
-cabal build
-cabal install
+$ cabal configure
+$ cabal build
+$ cabal install
 ```
 
 and everything should work.
