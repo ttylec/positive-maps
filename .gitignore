@@ -9,3 +9,5 @@ cabal-dev
 .cabal-sandbox/
 cabal.sandbox.config
 cabal.config
+symFinder
+symFinder-4d
