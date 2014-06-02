@@ -9,7 +9,7 @@ These are mainly source codes used during the research.
 ## Description
 
 The file `thesis notebok.nb` is a Mathematica notebook
-that contains symbolic calculations to complex to be
+that contains symbolic calculations too complex to be
 put explicitly in the thesis. It also illustrates how to
 use `positive.m` library, which was created during the
 research to simplify tasks. The source code of this
